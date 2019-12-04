@@ -8,7 +8,7 @@
 #include <math.h>
 
 
-#define SCREEN_W 680
+#define SCREEN_W 720
 #define SCREEN_H 720
 #define FPS 60
 
@@ -17,10 +17,10 @@
 #define N_JOGADAS 10
 #define N_TYPES 4
 
-const int COL_W = (SCREEN_W-200)/N_COLS;
+const int COL_W = (SCREEN_W-240)/N_COLS;
 const int LIN_W = SCREEN_H/N_LINHAS;
 
-int pontuacao = 0, recorde = 0, jogadas = N_JOGADAS;
+int pontuacao = 0, recorde = 0, jogadas = N_JOGADAS, flagAnimacao = 0;
 char buffer[100];
 
 typedef struct Candy {
@@ -42,9 +42,7 @@ void initCandies(){
 			M[i][j].type = 1 + rand()%N_TYPES;
 			M[i][j].active = 1;
 			M[i][j].color = al_map_rgb(M[i][j].type * 63,M[i][j].type * 63, M[i][j].type * 63);
-			printf("%d ", M[i][j].type);
 		}
-		printf("\n");
 	}
 }
 
@@ -79,6 +77,22 @@ void draw_scenario(ALLEGRO_DISPLAY *display) {
 	ALLEGRO_COLOR BKG_COLOR = al_map_rgb(0,0,0); 
 	al_set_target_bitmap(al_get_backbuffer(display));
 	al_clear_to_color(BKG_COLOR);
+	
+	sprintf(buffer, "Jogadas: %d", jogadas);
+	al_draw_text(size_f, al_map_rgb(0,0,255), SCREEN_W-230, SCREEN_H-100, 0, buffer);
+	
+	sprintf(buffer, "Recorde: %d", recorde);
+	al_draw_text(size_f, al_map_rgb(255,255,0), SCREEN_W-230, 50, 0, buffer);
+	
+	ALLEGRO_COLOR corPontuacao;
+	if(pontuacao <= recorde){
+		corPontuacao = al_map_rgb(0,0,255);
+	}else{
+		corPontuacao = al_map_rgb(0,255,0);
+	}
+	
+	sprintf(buffer, "Pontos: %d", pontuacao);
+	al_draw_text(size_f, corPontuacao, SCREEN_W-230, 100, 0, buffer);
 	
 	int i,j;
 	for(i = 0; i < N_LINHAS; i++){
@@ -230,7 +244,10 @@ int main(int argc, char **argv){
 	if(!al_install_mouse())
 		fprintf(stderr, "failed to initialize mouse!\n");   
 
-	size_f = al_load_font("arial.ttf", 20, 1);
+	al_init_font_addon();
+	al_init_ttf_addon();
+
+	size_f = al_load_font("arial.ttf", 32, 1);
 
 	event_queue = al_create_event_queue();
 	if(!event_queue) {
@@ -277,12 +294,10 @@ int main(int argc, char **argv){
 			}
 
 		}
-		else if(ev.type == ALLEGRO_EVENT_MOUSE_BUTTON_DOWN) {
-			printf("\nclicou em (%d, %d)", ev.mouse.x, ev.mouse.y);
+		else if(ev.type == ALLEGRO_EVENT_MOUSE_BUTTON_DOWN && flagAnimacao != 1) {
 			getCell(ev.mouse.x, ev.mouse.y, &lin_src, &col_src);
 		}
-		else if(ev.type == ALLEGRO_EVENT_MOUSE_BUTTON_UP) {
-			printf("\nsoltou em (%d, %d)", ev.mouse.x, ev.mouse.y);
+		else if(ev.type == ALLEGRO_EVENT_MOUSE_BUTTON_UP && flagAnimacao != 1) {
 			getCell(ev.mouse.x, ev.mouse.y, &lin_dst, &col_dst);
 			swap(lin_src, col_src, lin_dst, col_dst);
 		}		
@@ -297,6 +312,7 @@ int main(int argc, char **argv){
 		}
 		
 		while(verificaSequencia()){
+			flagAnimacao = 1;
 			destacaSequencia();
 			draw_scenario(display);
 			al_flip_display();
@@ -304,6 +320,7 @@ int main(int argc, char **argv){
 			destroiCandies();
 			sobeZeros(display);
 		}
+		flagAnimacao = 0;
 		
 		if(jogadas == 0){
 			playing = 0;
