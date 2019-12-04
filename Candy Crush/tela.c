@@ -8,17 +8,20 @@
 #include <math.h>
 
 
-#define SCREEN_W 480
-#define SCREEN_H 640
+#define SCREEN_W 680
+#define SCREEN_H 720
 #define FPS 60
 
 #define N_COLS 6
-#define N_LINHAS 8
-
+#define N_LINHAS 9
+#define N_JOGADAS 10
 #define N_TYPES 4
 
-const int COL_W = SCREEN_W/N_COLS;
+const int COL_W = (SCREEN_W-200)/N_COLS;
 const int LIN_W = SCREEN_H/N_LINHAS;
+
+int pontuacao = 0, recorde = 0, jogadas = N_JOGADAS;
+char buffer[100];
 
 typedef struct Candy {
 	int type;
@@ -28,6 +31,8 @@ typedef struct Candy {
 
 Candy M[N_LINHAS][N_COLS];
 int Seq[N_LINHAS][N_COLS];
+
+ALLEGRO_FONT *size_f;
 
 void initCandies(){
 	int i,j;
@@ -51,6 +56,10 @@ int getYCoord(int lin){
 	return lin * LIN_W;	
 }
 
+int calculaDistancia(int x1, int y1, int x2, int y2){
+	return sqrt(pow((x1-x2),2) + (pow((y1-y2),2)))  ;
+}
+	
 void desenhaCandy(int lin, int col){
 	int x = getXCoord(col);
 	int y = getYCoord(lin);
@@ -66,17 +75,12 @@ void desenhaCandy(int lin, int col){
 	}
 }
 
-
-
 void draw_scenario(ALLEGRO_DISPLAY *display) {
- 	
-	
 	ALLEGRO_COLOR BKG_COLOR = al_map_rgb(0,0,0); 
 	al_set_target_bitmap(al_get_backbuffer(display));
-	al_clear_to_color(BKG_COLOR);   
+	al_clear_to_color(BKG_COLOR);
 	
 	int i,j;
-	
 	for(i = 0; i < N_LINHAS; i++){
 		for(j = 0; j < N_COLS; j++){
 			desenhaCandy(i, j);
@@ -119,6 +123,18 @@ int verificaSequencia(){
     return existe;
 }
 
+void destacaSequencia(){
+	int i, j;
+	for(i = 0; i < N_LINHAS; i++){
+		for(j = 0; j < N_COLS; j++){
+			if(Seq[i][j]){
+				M[i][j].color = al_map_rgb(250,0,0);
+				desenhaCandy(i,j);
+			}				
+		}
+	}
+}
+
 void destroiCandies(){
 	int i,j;
     int contador = 0;
@@ -134,7 +150,8 @@ void destroiCandies(){
             }
         }
     }
-    printf("Zeros: %d\n", contador);
+	pontuacao += 50*contador;
+	printf("\n%d", pontuacao);
 }
 
 void sobeZeros(ALLEGRO_DISPLAY *display){
@@ -155,7 +172,6 @@ void sobeZeros(ALLEGRO_DISPLAY *display){
             i = -1;
             flag = 0;
 			draw_scenario(display);
-			Sleep(1);
         }
     }
 }
@@ -166,10 +182,19 @@ void getCell(int x, int y, int* lin, int* col){
 }
 
 void swap(int lin_src, int col_src, int lin_dst, int col_dst){
-	Candy aux;
-	aux = M[lin_src][col_src];
-	M[lin_src][col_src] = M[lin_dst][col_dst];
-	M[lin_dst][col_dst] = aux;
+	if(calculaDistancia(lin_src, col_src, lin_dst, col_dst) == 1){
+		Candy aux;
+		aux = M[lin_src][col_src];
+		M[lin_src][col_src] = M[lin_dst][col_dst];
+		M[lin_dst][col_dst] = aux;
+		
+		if(!verificaSequencia()){
+			M[lin_dst][col_dst] = M[lin_src][col_src];
+			M[lin_src][col_src] = aux;
+		}else{
+			jogadas--;
+		}
+	}
 }
 
 int main(int argc, char **argv){
@@ -177,7 +202,6 @@ int main(int argc, char **argv){
 	ALLEGRO_DISPLAY *display = NULL;
 	ALLEGRO_EVENT_QUEUE *event_queue = NULL;
 	ALLEGRO_TIMER *timer = NULL;
-
 
 	//----------------------- rotinas de inicializacao ---------------------------------------
 	if(!al_init()) {
@@ -206,6 +230,7 @@ int main(int argc, char **argv){
 	if(!al_install_mouse())
 		fprintf(stderr, "failed to initialize mouse!\n");   
 
+	size_f = al_load_font("arial.ttf", 20, 1);
 
 	event_queue = al_create_event_queue();
 	if(!event_queue) {
@@ -223,6 +248,12 @@ int main(int argc, char **argv){
 	al_register_event_source(event_queue, al_get_keyboard_event_source());   
 	//registra mouse na fila de eventos:
 	al_register_event_source(event_queue, al_get_mouse_event_source());    
+	FILE *arq = fopen("recorde.txt", "r");
+	if(arq != NULL){
+		fscanf(arq, "%d", &recorde);
+	}
+	fclose(arq);
+	
    //inicia o temporizador
 	al_start_timer(timer);
 	
@@ -266,16 +297,29 @@ int main(int argc, char **argv){
 		}
 		
 		while(verificaSequencia()){
+			destacaSequencia();
+			draw_scenario(display);
+			al_flip_display();
+			al_rest(1);
 			destroiCandies();
 			sobeZeros(display);
 		}
+		
+		if(jogadas == 0){
+			playing = 0;
+		}
 	} 
-
 	al_rest(1);
 
 	al_destroy_timer(timer);
 	al_destroy_display(display);
 	al_destroy_event_queue(event_queue);
+	
+	if(pontuacao > recorde){
+		arq = fopen("recorde.txt", "w");
+		fprintf(arq, "%d", pontuacao);
+		fclose(arq);
+	}
 
 	return 0;
 }
