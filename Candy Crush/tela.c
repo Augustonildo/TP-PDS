@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <allegro5/allegro.h>
+#include <allegro5/allegro_image.h>
 #include <allegro5/allegro_font.h>
 #include <allegro5/allegro_ttf.h>
 #include <allegro5/allegro_primitives.h>
@@ -46,6 +47,20 @@ void initCandies(){
 	}
 }
 
+ALLEGRO_BITMAP *pikachu;
+ALLEGRO_BITMAP *charmander;
+ALLEGRO_BITMAP *bulbasaur;
+ALLEGRO_BITMAP *squirtle;
+ALLEGRO_BITMAP *explosion;
+
+void initImages(){
+	pikachu = al_load_bitmap("pikachu.jpg");
+	charmander = al_load_bitmap("charmander.jpg");
+	bulbasaur = al_load_bitmap("bulbasaur.jpg");
+	squirtle = al_load_bitmap("squirtle.jpg");
+	explosion = al_load_bitmap("explosion.jpg");
+}
+
 int getXCoord(int col){
 	return col * COL_W; 
 }
@@ -63,13 +78,15 @@ void desenhaCandy(int lin, int col){
 	int y = getYCoord(lin);
 	
 	if(M[lin][col].type == 1){
-		al_draw_filled_rectangle(x,y,x+COL_W, y+LIN_W, M[lin][col].color);
+		al_draw_bitmap(pikachu, x, y, 0);
 	}else if (M[lin][col].type == 2){
-		al_draw_filled_rounded_rectangle(x,y,x+COL_W, y+LIN_W, COL_W/3, LIN_W/3, M[lin][col].color);
+		al_draw_bitmap(charmander, x, y, 0);
 	}else if (M[lin][col].type == 3){
-		al_draw_filled_ellipse(x+COL_W/2, y+LIN_W/2, COL_W/3, LIN_W/3, M[lin][col].color);
+		al_draw_bitmap(bulbasaur, x, y, 0);
 	}else if (M[lin][col].type == 4){
-		al_draw_filled_triangle(x+COL_W/2, y, x, y+LIN_W, x+COL_W, y+LIN_W, M[lin][col].color);
+		al_draw_bitmap(squirtle, x, y, 0);
+	}else if (M[lin][col].type == N_TYPES + 1){
+		al_draw_bitmap(explosion, x, y, 0);
 	}
 }
 
@@ -142,7 +159,7 @@ void destacaSequencia(){
 	for(i = 0; i < N_LINHAS; i++){
 		for(j = 0; j < N_COLS; j++){
 			if(Seq[i][j]){
-				M[i][j].color = al_map_rgb(250,0,0);
+				M[i][j].type = N_TYPES + 1;
 				desenhaCandy(i,j);
 			}				
 		}
@@ -221,6 +238,11 @@ int main(int argc, char **argv){
 		fprintf(stderr, "failed to initialize allegro!\n");
 		return -1;
 	}
+	
+	if(!al_init_image_addon()) {
+		fprintf(stderr, "failed to initialize image addon!\n");
+		return -1;
+	}
 
 	if(!al_init_primitives_addon()){
 		fprintf(stderr, "failed to initialize primitives!\n");
@@ -269,6 +291,8 @@ int main(int argc, char **argv){
 		fscanf(arq, "%d", &recorde);
 	}
 	fclose(arq);
+	
+	initImages();
 	
    //inicia o temporizador
 	al_start_timer(timer);
