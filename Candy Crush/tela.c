@@ -54,7 +54,7 @@ int getYCoord(int lin){
 	return lin * LIN_W;	
 }
 
-int calculaDistancia(int x1, int y1, int x2, int y2){
+float calculaDistancia(int x1, int y1, int x2, int y2){
 	return sqrt(pow((x1-x2),2) + (pow((y1-y2),2)))  ;
 }
 	
@@ -165,7 +165,6 @@ void destroiCandies(){
         }
     }
 	pontuacao += 50*contador;
-	printf("\n%d", pontuacao);
 }
 
 void sobeZeros(ALLEGRO_DISPLAY *display){
@@ -196,7 +195,7 @@ void getCell(int x, int y, int* lin, int* col){
 }
 
 void swap(int lin_src, int col_src, int lin_dst, int col_dst){
-	if(calculaDistancia(lin_src, col_src, lin_dst, col_dst) == 1){
+	if(calculaDistancia(lin_src, col_src, lin_dst, col_dst) == 1.0){
 		Candy aux;
 		aux = M[lin_src][col_src];
 		M[lin_src][col_src] = M[lin_dst][col_dst];
@@ -325,7 +324,9 @@ int main(int argc, char **argv){
 		if(jogadas == 0){
 			playing = 0;
 		}
-	} 
+	}
+	draw_scenario(display);		
+	al_flip_display();
 	al_rest(1);
 
 	al_destroy_timer(timer);
