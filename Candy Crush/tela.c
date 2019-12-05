@@ -85,6 +85,8 @@ void desenhaCandy(int lin, int col){
 		al_draw_bitmap(bulbasaur, x, y, 0);
 	}else if (M[lin][col].type == 4){
 		al_draw_bitmap(squirtle, x, y, 0);
+	}else if (M[lin][col].type == N_TYPES + 1){
+		al_draw_bitmap(explosion, x, y, 0);
 	}
 }
 
@@ -157,7 +159,7 @@ void destacaSequencia(){
 	for(i = 0; i < N_LINHAS; i++){
 		for(j = 0; j < N_COLS; j++){
 			if(Seq[i][j]){
-				M[i][j].color = al_map_rgb(250,0,0);
+				M[i][j].type = N_TYPES + 1;
 				desenhaCandy(i,j);
 			}				
 		}
